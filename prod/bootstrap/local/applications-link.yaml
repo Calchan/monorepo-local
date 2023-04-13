@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: bootstrap-applications-link
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+  - git:
+      repoURL: https://github.com/Calchan/monorepo-local.git
+      revision: HEAD
+      files:
+      - path: 'prod/clusters/local/*/*.yaml'
+  template:
+    metadata:
+      name: '{{.path.basename}}-{{trimSuffix ".yaml" .path.filename}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Calchan/monorepo-local.git
+        path: 'prod/clusters/{{.link}}/{{.path.basename}}/{{trimSuffix ".yaml" .path.filename}}'
+      destination:
+        name: in-cluster
+        namespace: '{{index .path.segments 3}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
